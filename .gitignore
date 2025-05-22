@@ -1,0 +1,9 @@
+﻿.idea
+
+DamageSound/bin/*
+DamageSound/obj/*
+
+Tool/input
+Tool/output
+
+*DotSettings.user
