@@ -47,6 +47,8 @@ public class DamageSound: BasePlugin
         
         RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+        
+        RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
 
         if (_pluginConfig.SoundFilePath != string.Empty)
         {
@@ -63,7 +65,7 @@ public class DamageSound: BasePlugin
         {
             foreach (CCSPlayerController player in Utilities.GetPlayers())
             {
-                InitPlayerDsSettings(player);
+                InitPlayerDsSettings(player.Slot);
             }
         }
 
@@ -87,6 +89,8 @@ public class DamageSound: BasePlugin
         
         RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+        
+        RemoveListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
         
         SoundSyncInterval.ValueChanged -= OnSoundSyncIntervalChanged;
         
@@ -168,12 +172,12 @@ public class DamageSound: BasePlugin
         player.PrintToChat($"Sound now {muted}");
     }
     
-    private void InitPlayerDsSettings(CCSPlayerController player)
+    private void InitPlayerDsSettings(int slot)
     {
         // TODO get player preference from DB
-        _dsPlayers[player.Slot] = new DsPlayer
+        _dsPlayers[slot] = new DsPlayer
         {
-            SoundVolume = player.PlayerName == "tuna" ? 1.0F: 0.3F,
+            SoundVolume = 0.3F,
             IsSoundMuted = false
         };
     }
@@ -241,6 +245,11 @@ public class DamageSound: BasePlugin
         PlaySoundToPlayer(dsPlayer.DeathSound, victim);
         
         return HookResult.Continue;
+    }
+
+    private void OnClientPutInServer(int slot)
+    {
+        InitPlayerDsSettings(slot);
     }
 
     #endregion
