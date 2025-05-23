@@ -131,7 +131,7 @@ public class DamageSound: BasePlugin
 
         ReadOnlySpan<char> argVolume = info.ArgByIndex(1).AsSpan();
 
-        if (!float.TryParse(argVolume.ToString(), out float volume))
+        if (!float.TryParse(argVolume, out float volume))
         {
             player.PrintToChat($"Invalid argument {argVolume.ToString()}");
             return;
@@ -207,7 +207,7 @@ public class DamageSound: BasePlugin
 
     private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
     {
-        var victim = @event.Userid;
+        CCSPlayerController? victim = @event.Userid;
 
         if (victim == null)
             return HookResult.Continue;
@@ -215,11 +215,11 @@ public class DamageSound: BasePlugin
         if (!_dsPlayers.TryGetValue(victim.Slot, out var dsPlayer))
             return HookResult.Continue;
 
-        // If player died recently
+        // If player take damage recently
         if (dsPlayer.NextDamageSoundAvailableTime - Server.CurrentTime > 0.0F)
             return HookResult.Continue;
         
-        dsPlayer.NextDamageSoundAvailableTime = Server.CurrentTime + DeathSoundPlaybackCooldown.Value;
+        dsPlayer.NextDamageSoundAvailableTime = Server.CurrentTime + DamageSoundPlaybackCooldown.Value;
         
         PlaySoundToPlayer(dsPlayer.DamageSound, victim);
         
@@ -228,7 +228,7 @@ public class DamageSound: BasePlugin
 
     private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
     {
-        var victim = @event.Userid;
+        CCSPlayerController? victim = @event.Userid;
 
         if (victim == null)
             return HookResult.Continue;
@@ -261,7 +261,7 @@ public class DamageSound: BasePlugin
     // Helpers
     // ==================================
     
-    private void PlaySoundToPlayer(in string soundName, CBaseEntity soundSource)
+    private void PlaySoundToPlayer(string soundName, CBaseEntity soundSource)
     {
         if (string.IsNullOrEmpty(soundName))
             return;
@@ -303,7 +303,7 @@ public class DamageSound: BasePlugin
         }, TimerFlags.REPEAT);
     }
     
-    private void RefreshPlayerDamageSound(CCSPlayerController player, in string modelName)
+    private void RefreshPlayerDamageSound(CCSPlayerController player, string modelName)
     {
         if (_pluginConfig.DamageSounds.TryGetValue(modelName, out var damageSound))
         {
