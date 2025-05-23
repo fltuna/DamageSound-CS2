@@ -53,6 +53,7 @@ public class DamageSound: BasePlugin
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
         
         RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
+        RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
 
         if (_pluginConfig.SoundFilePath != string.Empty)
         {
@@ -95,6 +96,7 @@ public class DamageSound: BasePlugin
         RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
         
         RemoveListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
+        RemoveListener<Listeners.OnClientDisconnect>(OnClientDisconnect); 
         
         SoundSyncInterval.ValueChanged -= OnSoundSyncIntervalChanged;
         
@@ -268,6 +270,11 @@ public class DamageSound: BasePlugin
     private void OnClientPutInServer(int slot)
     {
         InitPlayerDsSettings(slot);
+    }
+
+    private void OnClientDisconnect(int slot)
+    {
+        _dsPlayers.Remove(slot);
     }
 
     #endregion
