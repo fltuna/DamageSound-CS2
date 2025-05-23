@@ -241,7 +241,13 @@ public class DamageSound: BasePlugin
         
         dsPlayer.NextDamageSoundAvailableTime = Server.CurrentTime + DamageSoundPlaybackCooldown.Value;
         
-        PlaySoundToPlayer(dsPlayer.DamageSound, victim);
+        Server.NextFrame(() =>
+        {
+            if (victim.PlayerPawn.Value?.LifeState != (byte)LifeState_t.LIFE_ALIVE)
+                return;
+            
+            PlaySoundToPlayer(dsPlayer.DamageSound, victim);
+        });
         
         return HookResult.Continue;
     }
