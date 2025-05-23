@@ -1,0 +1,11 @@
+﻿{
+    "Plugin.Prefix": "{purple}[DamageSound]{default}",
+    "Word.Enabled": "{lime}Enabled{default}",
+    "Word.Disabled": "{red}Disabled{default}",
+    "General.Command.InvalidArgument": "The specified argument {lime}{0}{default} is invalid!",
+    "General.Command.OutOfRange": "The specified value {lime}{0}{default} is out of range! Valid Range: {blue}{1}{default} - {blue}{2}{default}",
+    "DamageSound.Command.SoundToggled": "Damage sound now {0}",
+    "DamageSound.Command.Volume.Usage": "Usage: !{0} <volume>",
+    "DamageSound.Command.Volume.Current": "Your current volume is {lime}{0}%{default}",
+    "DamageSound.Command.Volume.Set": "Damage sound volume is now {lime}{0}%{default}"
+}

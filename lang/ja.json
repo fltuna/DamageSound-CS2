@@ -1,0 +1,11 @@
+﻿{
+    "Plugin.Prefix": "{purple}[DamageSound]{default}",
+    "Word.Enabled": "{lime}有効{default}",
+    "Word.Disabled": "{red}無効{default}",
+    "General.Command.InvalidArgument": "指定された引数 {lime}{0}{default} は無効です!",
+    "General.Command.OutOfRange": "指定された値 {lime}{0}{default} は範囲外です! 有効な範囲: {blue}{1}{default} - {blue}{2}{default}",
+    "DamageSound.Command.SoundToggled": "ダメージサウンドが {0} になりました",
+    "DamageSound.Command.Volume.Usage": "使い方: !{0} <音量>",
+    "DamageSound.Command.Volume.Current": "現在の音量は {lime}{0}%{default} です",
+    "DamageSound.Command.Volume.Set": "ダメージサウンドの音量を {lime}{0}%{default} に設定しました"
+}

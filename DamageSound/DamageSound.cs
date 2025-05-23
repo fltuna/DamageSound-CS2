@@ -1,5 +1,6 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Cvars.Validators;
@@ -35,6 +36,9 @@ public class DamageSound: BasePlugin
     private readonly Dictionary<int, DsPlayer> _dsPlayers = new();
     
     private PluginConfig _pluginConfig = null!;
+    
+    private const float VolumeMin = 0.0F;
+    private const float VolumeMax = 100.0F;
     
     
     private Timer? _modelCheckTimer;
@@ -123,9 +127,13 @@ public class DamageSound: BasePlugin
         if (player == null)
             return;
 
-        if (info.ArgCount > 2)
+        if (info.ArgCount < 2)
         {
-            player.PrintToChat("Usage: ds_volume <volume>");
+            player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "DamageSound.Command.Volume.Usage", info.ArgByIndex(0))).ToString());
+            if (_dsPlayers.TryGetValue(player.Slot, out var dsPlayer))
+            {
+                player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "DamageSound.Command.Volume.Current", $"{dsPlayer.SoundVolume*100:F0}")).ToString());
+            }
             return;
         }
 
@@ -133,11 +141,19 @@ public class DamageSound: BasePlugin
 
         if (!float.TryParse(argVolume, out float volume))
         {
-            player.PrintToChat($"Invalid argument {argVolume.ToString()}");
+            player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "General.Command.InvalidArgument", argVolume.ToString())).ToString());
+            return;
+        }
+
+        if (volume < 0.0F || volume > 100.0F)
+        {
+            player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "General.Command.OutOfRange", volume, VolumeMin, VolumeMax)).ToString());
             return;
         }
             
-        SetPlayerDsVolume(player, volume);
+        // divide with 100, because command argument is percentage
+        SetPlayerDsVolume(player, volume/100);
+        player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "DamageSound.Command.Volume.Set", $"{volume:F0}")).ToString());
     }
 
     private void CommandDsToggle(CCSPlayerController? player, CommandInfo info)
@@ -159,7 +175,6 @@ public class DamageSound: BasePlugin
     private void SetPlayerDsVolume(CCSPlayerController player, float volume)
     {
         _dsPlayers[player.Slot].SoundVolume = volume;
-        player.PrintToChat($"Set volume to {volume}");
         // TODO Save to database
     }
 
@@ -169,7 +184,10 @@ public class DamageSound: BasePlugin
         
         _dsPlayers[player.Slot].IsSoundMuted = !muted;
         
-        player.PrintToChat($"Sound now {muted}");
+        var word = muted ? "Word.Enabled" : "Word.Disabled";
+        var translatedWord = LocalizeText(player, word);
+        
+        player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "DamageSound.Command.SoundToggled", translatedWord.ToString())).ToString());
     }
     
     private void InitPlayerDsSettings(int slot)
@@ -316,6 +334,31 @@ public class DamageSound: BasePlugin
             _dsPlayers[player.Slot].DeathSound = string.Empty;
         }
     }
-    
+
+    private void PrintLocalizedChatWithPrefixToPlayer(CCSPlayerController? player, string translationKey, params object[] args)
+    {
+        if (player == null)
+        {
+            Server.PrintToConsole($"{LocalizeText(player, translationKey, args)}");
+            return;
+        }
+        
+        player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, translationKey, args)).ToString());
+    }
+
+    private ReadOnlySpan<char> GetTextWithPluginPrefix(CCSPlayerController player, ReadOnlySpan<char> text)
+    {
+        return $"{Localizer.ForPlayer(player, "Plugin.Prefix")} {text}".AsSpan();
+    }
+
+    private ReadOnlySpan<char> LocalizeText(CCSPlayerController? player, string translationKey, params object[] args)
+    {
+        if (player == null)
+        {
+            return Localizer[translationKey, args].Value.AsSpan();
+        }
+
+        return Localizer.ForPlayer(player, translationKey, args).AsSpan();
+    }
     #endregion
 }
