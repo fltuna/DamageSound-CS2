@@ -2,7 +2,7 @@
 
 namespace DamageSound.Config;
 
-public sealed class PluginConfig(Dictionary<string, SoundData> damageSounds, bool botsEmitSound, IReadOnlyList<string> toggleCommandNames, IReadOnlyList<string> volumeCommandNames, string soundFilePath)
+public sealed class PluginConfig(Dictionary<string, SoundData> damageSounds, bool botsEmitSound, IReadOnlyList<string> toggleCommandNames, IReadOnlyList<string> volumeCommandNames, string soundFilePath, DatabaseConfig databaseConfig)
 {
     public readonly IReadOnlyDictionary<string, SoundData> DamageSounds = damageSounds;
     
@@ -12,4 +12,6 @@ public sealed class PluginConfig(Dictionary<string, SoundData> damageSounds, boo
 
     public IReadOnlyList<string> ToggleCommandNames { get; } = toggleCommandNames;
     public IReadOnlyList<string> VolumeCommandNames { get; } = volumeCommandNames;
+    
+    public DatabaseConfig DatabaseConfig = databaseConfig;
 }

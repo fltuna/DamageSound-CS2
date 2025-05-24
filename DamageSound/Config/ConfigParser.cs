@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security;
+using System.Text;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using DamageSound.Models;
@@ -55,10 +56,7 @@ public sealed class ConfigParser(string configPath, BasePlugin plugin)
         
         TomlTable toml = Toml.ToModel(configText);
 
-        
-        (List<string> VolumeCommandNames, List<string> ToggleCommandNames, bool BotsEmitSound, string SoundFilePath) 
-            pluginSettings = 
-                (new(), new(), false, SoundFilePath: string.Empty);
+        MutablePluginConfig pluginConfig = new MutablePluginConfig();
 
         int processedDataCounts = 0;
         foreach (var (key, value) in toml)
@@ -68,7 +66,7 @@ public sealed class ConfigParser(string configPath, BasePlugin plugin)
             
             if (key.Equals("Settings", StringComparison.OrdinalIgnoreCase))
             {
-                var missing = ParsePluginSetting(soundDataTable, ref pluginSettings);
+                var missing = ParsePluginSetting(soundDataTable, pluginConfig);
                 
                 if (!missing.Any())
                     continue;
@@ -86,10 +84,16 @@ public sealed class ConfigParser(string configPath, BasePlugin plugin)
         }
         
         Plugin.Logger.LogInformation("Successfully loaded {Count} sound data from config files.", processedDataCounts);
-        return new PluginConfig(soundData, pluginSettings.BotsEmitSound, pluginSettings.ToggleCommandNames, pluginSettings.VolumeCommandNames, pluginSettings.SoundFilePath);
+
+        var dbConfig = pluginConfig.CreateDatabaseConfig();
+        
+        if (dbConfig == null)
+            throw new InvalidOperationException("Failed to parse database config.");
+        
+        return new PluginConfig(soundData, pluginConfig.BotsEmitSound, pluginConfig.ToggleCommandNames, pluginConfig.VolumeCommandNames, pluginConfig.SoundFilePath, dbConfig);
     }
 
-    private List<string> ParsePluginSetting(TomlTable pluginSettingTable, ref (List<string> VolumeCommandNames, List<string> ToggleCommandNames, bool BotsEmitSound, string SoundFilePath) pluginSettings)
+    private List<string> ParsePluginSetting(TomlTable pluginSettingTable, MutablePluginConfig pluginSettings)
     {
         List<string> missingSettings = new();
 
@@ -130,6 +134,64 @@ public sealed class ConfigParser(string configPath, BasePlugin plugin)
         {
             missingSettings.Add("ToggleCommandName");
         }
+        
+        
+        // Process DB information
+
+        if (pluginSettingTable.TryGetValue("DatabaseType", out var dbTypeObj) && dbTypeObj is string dbType)
+        {
+            pluginSettings.DatabaseType = dbType;
+        }
+        else
+        {
+            missingSettings.Add("DatabaseType");
+        }
+
+        if (pluginSettingTable.TryGetValue("DatabaseHost", out var databaseHostObj) && databaseHostObj is string databaseHost)
+        {
+            pluginSettings.DatabaseHost = databaseHost;
+        }
+        else
+        {
+            missingSettings.Add("DatabaseHost");
+        }
+
+        if (pluginSettingTable.TryGetValue("DatabasePort", out var databasePortObj) && databasePortObj is string databasePort)
+        {
+            pluginSettings.DatabasePort = databasePort;
+        }
+        else
+        {
+            missingSettings.Add("DatabasePort");
+        }
+
+        if (pluginSettingTable.TryGetValue("DatabaseName", out var databaseNameObj) && databaseNameObj is string databaseName)
+        {
+            pluginSettings.DatabaseName = databaseName;
+        }
+        else
+        {
+            missingSettings.Add("DatabaseName");
+        }
+
+        if (pluginSettingTable.TryGetValue("DatabaseUser", out var databaseUserObj) && databaseUserObj is string databaseUser)
+        {
+            pluginSettings.DatabaseUser = databaseUser;
+        }
+        else
+        {
+            missingSettings.Add("DatabaseUser");
+        }
+
+        if (pluginSettingTable.TryGetValue("DatabasePassword", out var databasePasswordObj) && databasePasswordObj is string databasePassword)
+        {
+            pluginSettings.DatabasePassword = databasePassword;
+        }
+        else
+        {
+            missingSettings.Add("DatabasePassword");
+        }
+        
         
         return missingSettings;
     }
@@ -242,6 +304,16 @@ ToggleCommandName = [""ds_toggle"", ""dst""]
 # If you already precached a .vsndevts file in another plugin, then you can leave as blank.
 SoundFilePath = """"
 
+# Database
+DatabaseType = ""sqlite""
+# When you using sqlite, then this name become file name
+DatabaseName = ""DamageSound.db""
+DatabaseHost = """"
+DatabasePort = """"
+DatabaseUser = """"
+DatabasePassword = """"
+
+
 
 # You can set name to whatever you want, but it should be unique.
 [CTDefault]
@@ -256,5 +328,35 @@ DeathSound = ""Test.DeathSound2""
 ";
         
         File.WriteAllText(ConfigPath, defaultConfig);
+    }
+
+    private class MutablePluginConfig
+    {
+        public Dictionary<string, SoundData> DamageSounds = new();
+
+        public bool BotsEmitSound;
+
+        public string SoundFilePath = string.Empty;
+
+        public List<string> ToggleCommandNames = new();
+        public List<string> VolumeCommandNames = new();
+        
+        public string DatabaseType = string.Empty;
+        public string DatabaseHost = string.Empty;
+        public string DatabasePort = string.Empty;
+        public string DatabaseName = string.Empty;
+        public string DatabaseUser = string.Empty;
+        public string DatabasePassword = string.Empty;
+
+        public DatabaseConfig? CreateDatabaseConfig()
+        {
+            if (string.IsNullOrEmpty(DatabaseType))
+                return null;
+            
+            if (!Enum.TryParse<DbType>(DatabaseType, true, out var dbType))
+                return null;
+
+            return new DatabaseConfig(dbType, DatabaseHost, DatabasePort, DatabaseName, DatabaseUser, ref DatabasePassword);
+        }
     }
 }

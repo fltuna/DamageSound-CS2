@@ -1,7 +1,11 @@
-﻿namespace DamageSound.Models;
+﻿using CounterStrikeSharp.API.Modules.Entities;
+
+namespace DamageSound.Models;
 
 public class DsPlayer
 {
+    public SteamID? SteamId { get; set; }
+
     private float _soundVolume = 1.0F;
 
     public float SoundVolume

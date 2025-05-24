@@ -4,12 +4,15 @@ using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Cvars.Validators;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using DamageSound.Config;
+using DamageSound.Database;
 using DamageSound.Models;
 using DamageSound.SoundHashes;
+using Microsoft.Extensions.Logging;
 using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 namespace DamageSound;
@@ -36,6 +39,7 @@ public class DamageSound: BasePlugin
     private readonly Dictionary<int, DsPlayer> _dsPlayers = new();
     
     private PluginConfig _pluginConfig = null!;
+    private DsDatabaseProvider _dsDatabaseProvider = null!;
     
     private const float VolumeMin = 0.0F;
     private const float VolumeMax = 100.0F;
@@ -46,6 +50,8 @@ public class DamageSound: BasePlugin
     public override void Load(bool hotReload)
     {
         _pluginConfig = new ConfigParser(Path.Combine(ModuleDirectory, "configs", "dsconfig.toml"), this).Load();
+        _dsDatabaseProvider = new DsDatabaseProvider(_pluginConfig.DatabaseConfig, this);
+        
         
         HookUserMessage(208, HookSound, HookMode.Pre);
         
@@ -177,7 +183,6 @@ public class DamageSound: BasePlugin
     private void SetPlayerDsVolume(CCSPlayerController player, float volume)
     {
         _dsPlayers[player.Slot].SoundVolume = volume;
-        // TODO Save to database
     }
 
     private void TogglePlayerDsSound(CCSPlayerController player)
@@ -188,18 +193,28 @@ public class DamageSound: BasePlugin
         
         var word = muted ? "Word.Enabled" : "Word.Disabled";
         var translatedWord = LocalizeText(player, word);
-        
         player.PrintToChat(GetTextWithPluginPrefix(player, LocalizeText(player, "DamageSound.Command.SoundToggled", translatedWord.ToString())).ToString());
     }
     
     private void InitPlayerDsSettings(int slot)
     {
-        // TODO get player preference from DB
         _dsPlayers[slot] = new DsPlayer
         {
             SoundVolume = 0.3F,
             IsSoundMuted = false
         };
+        
+        CCSPlayerController? player = Utilities.GetPlayerFromSlot(slot);
+        
+        if (player == null)
+            return;
+        
+        if (player.IsBot || player.IsHLTV)
+            return;
+        
+        SteamID steamId = (SteamID)player.SteamID;
+        _dsPlayers[slot].SteamId = steamId;
+        _ = _dsDatabaseProvider.PlayerPreferenceRepository.GetPlayerPreferences(steamId, _dsPlayers[slot]).ConfigureAwait(false);
     }
     
     #endregion
@@ -280,6 +295,15 @@ public class DamageSound: BasePlugin
 
     private void OnClientDisconnect(int slot)
     {
+        if (!_dsPlayers.TryGetValue(slot, out var dsPlayer))
+            return;
+        
+        var steamId = dsPlayer.SteamId;
+        
+        if (steamId == null)
+            return;
+        
+        SavePlayerPrefsToDatabase(steamId, dsPlayer);
         _dsPlayers.Remove(slot);
     }
 
@@ -372,6 +396,11 @@ public class DamageSound: BasePlugin
         }
 
         return Localizer.ForPlayer(player, translationKey, args).AsSpan();
+    }
+    
+    private void SavePlayerPrefsToDatabase(SteamID steamId, DsPlayer playerPref)
+    {
+        _ = _dsDatabaseProvider.PlayerPreferenceRepository.UpsertPlayerPreferences(steamId, playerPref).ConfigureAwait(false);
     }
     #endregion
 }
