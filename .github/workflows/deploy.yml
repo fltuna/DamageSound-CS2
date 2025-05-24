@@ -73,16 +73,48 @@ jobs:
           Copy-Item -Path "DamageSound\bin\Release\net8.0\DamageSound.dll" -Destination "artifacts\plugins\DamageSound\DamageSound.dll" -Force
           Copy-Item -Path "lang\" -Destination "artifacts\plugins\DamageSound\" -Recurse -Force
 
+      - name: Copy and create linux x64 artifact
+        run: |
+          mkdir artifacts-linux-x64\
+          Copy-Item -Path "artifacts\*" -Destination "artifacts-linux-x64\" -Force -Recurse
+        
+      - name: Copy and create artifacts with dependencies
+        run: |
+          mkdir artifacts-linux-x64-with-dependencies\
+          mkdir artifacts-windows-x64-with-dependencies\
+          Copy-Item -Path "artifacts-linux-x64\*" -Destination "artifacts-linux-x64-with-dependencies\" -Force -Recurse
+          Copy-Item -Path "artifacts\*" -Destination "artifacts-windows-x64-with-dependencies\" -Force -Recurse
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\Dapper.dll" -Destination "artifacts-windows-x64-with-dependencies\plugins\DamageSound\Dapper.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\Dapper.dll" -Destination "artifacts-linux-x64-with-dependencies\plugins\DamageSound\Dapper.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\System.Data.SQLite.dll" -Destination "artifacts-windows-x64-with-dependencies\plugins\DamageSound\System.Data.SQLite.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\System.Data.SQLite.dll" -Destination "artifacts-linux-x64-with-dependencies\plugins\DamageSound\System.Data.SQLite.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\MySqlConnector.dll" -Destination "artifacts-windows-x64-with-dependencies\plugins\DamageSound\MySqlConnector.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\MySqlConnector.dll" -Destination "artifacts-linux-x64-with-dependencies\plugins\DamageSound\MySqlConnector.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\Npgsql.dll" -Destination "artifacts-windows-x64-with-dependencies\plugins\DamageSound\Npgsql.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\Npgsql.dll" -Destination "artifacts-linux-x64-with-dependencies\plugins\DamageSound\Npgsql.dll" -Force
+        
+      - name: Copy runtime artifacts
+        run: |
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\runtimes\win-x64\native\SQLite.Interop.dll" -Destination "artifacts-windows-x64-with-dependencies\plugins\DamageSound\SQLite.Interop.dll" -Force
+          Copy-Item -Path "DamageSound\bin\Release\net8.0\publish\runtimes\linux-x64\native\SQLite.Interop.dll" -Destination "artifacts-linux-x64-with-dependencies\plugins\DamageSound\SQLite.Interop.dll" -Force
+          
       - name: Compress artifacts
         run: |
-          Compress-Archive -Path artifacts/* -Destination DamageSound.zip
+          Compress-Archive -Path artifacts/* -Destination DamageSound-win-x64.zip
+          Compress-Archive -Path artifacts-linux-x64/* -Destination DamageSound-linux-x64.zip
+          Compress-Archive -Path artifacts-windows-x64-with-dependencies/* -Destination DamageSound-win-x64-with-dependencies.zip
+          Compress-Archive -Path artifacts-linux-x64-with-dependencies/* -Destination DamageSound-linux-x64-with-dependencies.zip
 
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
-          path: DamageSound.zip
+          path: |
+            DamageSound-win-x64.zip
+            DamageSound-linux-x64.zip
+            DamageSound-win-x64-with-dependencies.zip
+            DamageSound-linux-x64-with-dependencies.zip
         
   release:
     runs-on: windows-latest
