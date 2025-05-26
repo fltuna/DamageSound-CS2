@@ -229,10 +229,21 @@ public class DamageSound: BasePlugin
     private HookResult HookSound(UserMessage msg)
     {
         uint soundEventHash = msg.ReadUInt("soundevent_hash");
+        int sourceEntityIndex = msg.ReadInt("source_entity_index");
 
+        if (sourceEntityIndex == -1)
+            return HookResult.Continue;
+        
         // Ignore sounds when defined in IgnoringDamageHashes
         if (Enum.IsDefined(typeof(IgnoringDamageHashes), soundEventHash))
         {
+            if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
+                return HookResult.Continue;
+
+            // If player is muted a damage/death sound, or player model doesn't have a sounds, then play sound normally
+            if (dsPlayer.IsSoundMuted || string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
+                return HookResult.Continue;
+            
             msg.SetInt("soundevent_guid", 0);
             msg.SetInt("soundevent_hash", 0);
         }
