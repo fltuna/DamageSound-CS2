@@ -240,8 +240,8 @@ public class DamageSound: BasePlugin
             if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
                 return HookResult.Continue;
 
-            // If player is muted a damage/death sound, or player model doesn't have a sounds, then play sound normally
-            if (dsPlayer.IsSoundMuted || string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
+            // Player model doesn't have a sounds, then play sound normally
+            if (string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
                 return HookResult.Continue;
             
             msg.SetInt("soundevent_guid", 0);
