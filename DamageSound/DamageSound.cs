@@ -231,23 +231,23 @@ public class DamageSound: BasePlugin
         uint soundEventHash = msg.ReadUInt("soundevent_hash");
         
         // Ignore sounds when defined in IgnoringDamageHashes
-        if (Enum.IsDefined(typeof(IgnoringDamageHashes), soundEventHash))
-        {
-            int sourceEntityIndex = msg.ReadInt("source_entity_index");
+        if (!Enum.IsDefined(typeof(IgnoringDamageHashes), soundEventHash))
+            return HookResult.Continue;
+        
+        int sourceEntityIndex = msg.ReadInt("source_entity_index");
 
-            if (sourceEntityIndex == -1)
-                return HookResult.Continue;
-            
-            if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
-                return HookResult.Continue;
+        if (sourceEntityIndex == -1)
+            return HookResult.Continue;
+        
+        if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
+            return HookResult.Continue;
 
-            // Player model doesn't have a sounds, then play sound normally
-            if (string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
-                return HookResult.Continue;
-            
-            msg.SetInt("soundevent_guid", 0);
-            msg.SetInt("soundevent_hash", 0);
-        }
+        // If player model doesn't have a sounds, then play sound normally
+        if (string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
+            return HookResult.Continue;
+        
+        msg.SetInt("soundevent_guid", 0);
+        msg.SetInt("soundevent_hash", 0);
         
         return HookResult.Continue;
     }
