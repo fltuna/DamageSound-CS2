@@ -229,14 +229,15 @@ public class DamageSound: BasePlugin
     private HookResult HookSound(UserMessage msg)
     {
         uint soundEventHash = msg.ReadUInt("soundevent_hash");
-        int sourceEntityIndex = msg.ReadInt("source_entity_index");
-
-        if (sourceEntityIndex == -1)
-            return HookResult.Continue;
         
         // Ignore sounds when defined in IgnoringDamageHashes
         if (Enum.IsDefined(typeof(IgnoringDamageHashes), soundEventHash))
         {
+            int sourceEntityIndex = msg.ReadInt("source_entity_index");
+
+            if (sourceEntityIndex == -1)
+                return HookResult.Continue;
+            
             if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
                 return HookResult.Continue;
 
