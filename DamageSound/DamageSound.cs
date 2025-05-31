@@ -61,6 +61,11 @@ public class DamageSound: BasePlugin
         RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
         RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
 
+        RegisterListener<Listeners.OnMapStart>(mapName =>
+        {
+            RecreatePlayerModelCheckTimer(SoundSyncInterval.Value);
+        });
+        
         if (_pluginConfig.SoundFilePath != string.Empty)
         {
         
@@ -238,10 +243,13 @@ public class DamageSound: BasePlugin
 
         if (sourceEntityIndex == -1)
             return HookResult.Continue;
+
+        var playerSlot = Utilities.GetPlayerFromIndex(sourceEntityIndex)?.Slot ?? 0;
         
-        if (!_dsPlayers.TryGetValue(sourceEntityIndex, out var dsPlayer))
+        if (!_dsPlayers.TryGetValue(playerSlot, out var dsPlayer))
             return HookResult.Continue;
 
+        Server.PrintToChatAll($"{dsPlayer.SteamId}");
         // If player model doesn't have a sounds, then play sound normally
         if (string.IsNullOrEmpty(dsPlayer.DamageSound) || string.IsNullOrEmpty(dsPlayer.DeathSound))
             return HookResult.Continue;
