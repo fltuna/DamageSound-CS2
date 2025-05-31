@@ -267,6 +267,11 @@ public class DamageSound: BasePlugin
         if (victim == null)
             return HookResult.Continue;
 
+        CCSPlayerController? attacker = @event.Attacker;
+
+        if (attacker != null && attacker.Slot == victim.Slot)
+            return HookResult.Continue;
+
         if (!_dsPlayers.TryGetValue(victim.Slot, out var dsPlayer))
             return HookResult.Continue;
 
